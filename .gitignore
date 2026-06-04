@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Virtual environment
+.venv/
+venv/
+
+# Datasets downloaded from Kaggle (licensed — not redistributed)
+data/
+
+# Generated pipeline outputs (the shareable report is published to docs/index.html)
+results/
+
+# Kaggle credentials — never commit
+.kaggle/
+kaggle.json
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+
+# Original spec (kept local)
+prompt.md
