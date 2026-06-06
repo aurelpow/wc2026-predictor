@@ -66,14 +66,15 @@ def _group_section(group: str, teams: list, tournament, group_preds: pd.DataFram
         for label, val in cells.items():
             hi = " high" if label == ml else ""
             tds.append(f'<td class="{_cls(val)}{hi}">{_pct(val)}</td>')
+        score = m["score"] if "score" in m and pd.notna(m["score"]) else ""
         rows.append(
             f"<tr><td class='team'>{_esc(m['home'])}</td>"
             f"<td class='team'>{_esc(m['away'])}</td>{''.join(tds)}"
-            f"<td>{_esc(ml)}</td></tr>"
+            f"<td>{_esc(ml)}</td><td class='score'>{_esc(score)}</td></tr>"
         )
     match_table = (
         "<table><tr><th class='team'>Home</th><th class='team'>Away</th>"
-        "<th>Home Win</th><th>Draw</th><th>Away Win</th><th>Most likely</th></tr>"
+        "<th>Home Win</th><th>Draw</th><th>Away Win</th><th>Most likely</th><th>Score</th></tr>"
         + "".join(rows) + "</table>"
     )
 
