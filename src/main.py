@@ -36,6 +36,19 @@ RESULTS_DIR = PROJECT_ROOT / "results"
 DOCS_DIR = PROJECT_ROOT / "docs"  # GitHub Pages serves index.html from here
 GROUP_LETTERS = list(string.ascii_uppercase[:12])  # A..L
 
+# Actual winners of the March 2026 play-offs, which the fixtures dataset still lists
+# as TBD placeholders. Maps the placeholder label -> the real (canonical) team.
+# UEFA: https://en.wikipedia.org/wiki/2026_FIFA_World_Cup_qualification_(UEFA)
+# Inter-confederation: https://en.wikipedia.org/wiki/2026_FIFA_World_Cup_qualification_(inter-confederation_play-offs)
+PLAYOFF_RESULTS = {
+    "Winner UEFA Playoff A": "Bosnia and Herzegovina",  # -> Group B
+    "Winner UEFA Playoff B": "Sweden",                   # -> Group F
+    "Winner UEFA Playoff C": "Turkey",                   # -> Group D
+    "Winner UEFA Playoff D": "Czech Republic",           # -> Group A
+    "Winner FIFA Playoff 1": "DR Congo",                 # -> Group K
+    "Winner FIFA Playoff 2": "Iraq",                     # -> Group I
+}
+
 
 # --------------------------------------------------------------------------- #
 # Group construction
@@ -44,7 +57,7 @@ def build_groups(fixtures: pd.DataFrame, team_df: pd.DataFrame) -> tuple[dict, s
     """Derive {group_letter: [4 teams]} from the fixtures draw, with fallback."""
     groups = _groups_from_draw(fixtures, team_df)
     if _valid_groups(groups):
-        return groups, "fixtures draw (TBD playoff slots filled by FIFA rank)"
+        return groups, "fixtures draw + actual March-2026 play-off winners"
 
     groups = _fallback_groups(fixtures, team_df)
     return groups, "fallback (top-48 by FIFA rank, seeded draw)"
@@ -67,21 +80,27 @@ def _groups_from_draw(fixtures: pd.DataFrame, team_df: pd.DataFrame) -> dict:
         return {}
 
     groups: dict[str, list[str]] = {g: [] for g in GROUP_LETTERS}
-    placeholder_slots: list[str] = []  # group letters needing a filler
+    unresolved: list[str] = []  # group letters whose play-off winner is unknown
     for _, row in fixtures.iterrows():
         g = str(row["group"]).strip().upper()
         if g not in groups:
             continue
         if row["is_placeholder"]:
-            placeholder_slots.append(g)
+            real = PLAYOFF_RESULTS.get(row["team"])
+            if real:
+                groups[g].append(dl.normalize_team(real))
+            else:
+                unresolved.append(g)  # fall back to a rank-based guess below
         else:
             groups[g].append(row["team"])
 
-    placed = {t for ts in groups.values() for t in ts}
-    pool = [t for t in _candidate_entrants(team_df) if t not in placed]
-    for g in placeholder_slots:
-        if pool:
-            groups[g].append(pool.pop(0))
+    # Any play-off slot we don't have a confirmed result for: fill by FIFA rank.
+    if unresolved:
+        placed = {t for ts in groups.values() for t in ts}
+        pool = [t for t in _candidate_entrants(team_df) if t not in placed]
+        for g in unresolved:
+            if pool:
+                groups[g].append(pool.pop(0))
     return {g: v[:4] for g, v in groups.items()}
 
 

@@ -77,14 +77,16 @@ needed) — useful to confirm the install works end-to-end.
   elite side. This is what brings the favorites in line with expert/bookmaker consensus.
 - **Squad market value:** log market-value gap, a static squad-quality anchor for the
   48 entrants (defaults to the median for teams missing a value).
-- **Training data:** *all* international matches since 1992 (qualifiers, continental
-  cups, friendlies, World Cups) — not just World Cup games. Each match gets a
+- **Training data:** international matches since **2014** (qualifiers, continental
+  cups, friendlies, World Cups) — not just World Cup games. Elo/form features still warm
+  up from the full history; only the *training rows* start in 2014. Each match gets a
   per-row **sample weight = recency × competitiveness**:
   - *Recency:* exponential time decay with a 4-year half-life, so a game 12 years ago
     counts ~⅛ as much as a recent one (and early-2026 matches count most).
-  - *Competitiveness:* friendly 0.4 · qualifier/Nations League 0.8 · other competitive
-    0.6 · major tournament final 1.0.
-  Tune both in `feature_engineering.py` (`RECENCY_HALFLIFE_YEARS`, `competitiveness`).
+  - *Competitiveness:* friendly 0.2 · other competitive 0.65 · qualifier/Nations League
+    0.85 · major tournament final 1.0 — official games are worth up to 5× a friendly.
+  Tune all three in `feature_engineering.py` (`TRAIN_MIN_YEAR`, `RECENCY_HALFLIFE_YEARS`,
+  `competitiveness`).
 - **Backtest:** walk-forward over recent World Cups — for each edition the model trains
   only on *prior* matches, then is scored on that edition (no future leakage).
 - **Outcome model** is the source of truth for W/D/L. Goals (for GD/GF tiebreakers and
