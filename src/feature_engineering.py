@@ -17,6 +17,8 @@ from collections import defaultdict
 import numpy as np
 import pandas as pd
 
+from confederations import confed_strength
+
 FEATURE_COLS = [
     "home_form", "away_form",
     "home_attack", "away_attack",
@@ -24,6 +26,7 @@ FEATURE_COLS = [
     "h2h_winrate", "rank_delta", "wc_exp_delta",
     "value_log_delta",  # squad market-value gap (log) — anchors true squad quality
     "elo_delta",        # opponent-adjusted strength earned against real opposition
+    "confed_delta",     # zone-strength gap (Europe/South America toughest)
 ]
 
 ELO_START = 1500.0
@@ -141,6 +144,8 @@ class FeatureBuilder:
             "value_log_delta": self._log_value(home) - self._log_value(away),
             # Elo gap (positive => home is the stronger side by earned rating)
             "elo_delta": self.elo[home] - self.elo[away],
+            # zone-strength gap (positive => home is from the tougher confederation)
+            "confed_delta": confed_strength(home) - confed_strength(away),
         }
 
     def update(self, home: str, away: str, hs: int, as_: int,

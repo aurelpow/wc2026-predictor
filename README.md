@@ -77,6 +77,11 @@ needed) — useful to confirm the install works end-to-end.
   elite side. This is what brings the favorites in line with expert/bookmaker consensus.
 - **Squad market value:** log market-value gap, a static squad-quality anchor for the
   48 entrants (defaults to the median for teams missing a value).
+- **Confederation strength (`confed_delta`):** a zone-toughness gap so a result counts
+  for how hard the opponent's confederation is — Europe (UEFA) and South America
+  (CONMEBOL) are rated toughest, Oceania weakest. This corrects "soft-schedule"
+  inflation (e.g. a side padding wins in a weaker zone). Edit `src/confederations.py`
+  to retune the zone scores.
 - **Training data:** international matches since **2014** (qualifiers, continental
   cups, friendlies, World Cups) — not just World Cup games. Elo/form features still warm
   up from the full history; only the *training rows* start in 2014. Each match gets a
