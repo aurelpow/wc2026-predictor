@@ -34,7 +34,7 @@ STRENGTH_WINDOW = 20  # last N matches for attack/defense
 DEFAULT_RANK = 50.0   # rank assumed for teams absent from the ranking snapshot
 WC_NAME = "FIFA World Cup"
 
-TRAIN_MIN_YEAR = 1992          # emit training rows from here (lets history warm up)
+TRAIN_MIN_YEAR = 2014          # emit training rows from here (features still warm up from full history)
 RECENCY_HALFLIFE_YEARS = 4.0   # a match this old gets half the weight of a fresh one
 
 # Continental finals / major tournaments -> full competitiveness weight.
@@ -45,15 +45,16 @@ _MAJOR_TOURNAMENTS = (
 
 
 def competitiveness(tournament: str) -> float:
-    """Base sample weight by match importance (friendly << qualifier < major final)."""
+    """Base sample weight by match importance. Official games count far more than
+    friendlies — a friendly is worth only 1/5 of a major-tournament match."""
     t = (tournament or "").lower()
     if "friendly" in t:
-        return 0.4
+        return 0.2
     if "qualifi" in t or "nations league" in t:
-        return 0.8
+        return 0.85
     if any(m in t for m in _MAJOR_TOURNAMENTS):
         return 1.0
-    return 0.6  # other competitive (regional cups, playoffs, etc.)
+    return 0.65  # other competitive (regional cups, playoffs, etc.)
 
 
 def sample_weights(meta: pd.DataFrame, ref_date, halflife: float = RECENCY_HALFLIFE_YEARS) -> np.ndarray:
