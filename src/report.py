@@ -105,6 +105,14 @@ summary::-webkit-details-marker { display:none; }
 
 footer { margin-top:34px; font-size:12px; color:#5b6470; text-align:center; }
 .legend span { display:inline-block; padding:2px 8px; border-radius:6px; margin:0 3px; }
+.credit { margin:22px auto 6px; padding:18px; max-width:560px; background:#fff; border:1px solid #e7ebf0;
+          border-radius:16px; box-shadow:0 4px 14px rgba(20,30,50,.06); }
+.credit .by { font-size:15px; color:#11161d; } .credit .by strong { font-weight:800; }
+.credit .links { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-top:12px; }
+.credit a { text-decoration:none; color:#fff; font-weight:700; font-size:13px; padding:8px 14px;
+            border-radius:10px; display:inline-flex; align-items:center; gap:6px; }
+.credit a.gh { background:#24292f; } .credit a.li { background:#0a66c2; }
+.credit a.pf { background:linear-gradient(135deg,#0b6e4f,#2a7ae2); }
 @media print { body { background:#fff; } .hero { box-shadow:none; } details { break-inside:avoid; }
                details[open] summary ~ * { display:block; } .kowrap { overflow:visible; flex-wrap:wrap; } }
 """
@@ -302,6 +310,14 @@ def build_html_report(summary: pd.DataFrame, group_preds: pd.DataFrame,
 <h2>Tournament path — all 48 teams</h2>
 {_paths_table(summary, finish_counts)}
 
+<div class="credit">
+  <div class="by">Built by <strong>Aurélien Darracq</strong> · <span style="color:#5b6470">@aurelpow</span></div>
+  <div class="links">
+    <a class="gh" href="https://github.com/aurelpow" target="_blank" rel="noopener">⌨ GitHub</a>
+    <a class="li" href="https://www.linkedin.com/in/aur%C3%A9lien-darracq/" target="_blank" rel="noopener">in LinkedIn</a>
+    <a class="pf" href="https://aurelpow.github.io/portofolio-website/" target="_blank" rel="noopener">🌐 Portfolio</a>
+  </div>
+</div>
 <footer>
 <p class="legend">Probability colour key:
 <span class="g">&gt; 60%</span><span class="y">40–60%</span><span class="r">&lt; 40%</span></p>

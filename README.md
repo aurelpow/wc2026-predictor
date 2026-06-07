@@ -7,6 +7,10 @@ self-contained HTML bracket report.
 
 ### 📊 [**View the live report →**](https://aurelpow.github.io/wc2026-predictor/)
 
+**Author:** Aurélien Darracq ([@aurelpow](https://github.com/aurelpow)) ·
+[LinkedIn](https://www.linkedin.com/in/aur%C3%A9lien-darracq/) ·
+[Portfolio](https://aurelpow.github.io/portofolio-website/)
+
 ## Project structure
 
 ```
