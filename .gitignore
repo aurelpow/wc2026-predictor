@@ -23,3 +23,7 @@ Thumbs.db
 
 # Original spec (kept local)
 prompt.md
+
+# Personal prediction spreadsheets (keep local, never publish)
+*.xlsx
+*.xls
