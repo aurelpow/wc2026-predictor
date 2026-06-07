@@ -86,22 +86,30 @@ class Tournament:
             return max(1, int(round(lam_h))), max(0, int(round(lam_h)) - 1)
         return max(0, int(round(lam_a)) - 1), max(1, int(round(lam_a)))
 
-    def modal_scoreline(self, home: str, away: str, ko: bool = False) -> tuple[int, int]:
-        """Most probable scoreline from the Poisson grid.
+    def modal_scoreline(self, home: str, away: str, outcome: int | None = None) -> tuple[int, int]:
+        """Most probable scoreline from the Poisson grid, optionally restricted to a
+        given outcome so it never contradicts the predicted result.
 
-        When ko=True the result is the most probable scoreline in which `home` WINS
-        (home_goals > away_goals), so it never contradicts a predicted winner.
+        outcome: None = any (draws allowed), 2 = home win, 1 = draw, 0 = away win.
         """
         lam_h, lam_a = self._rates(home, away)
         gh = np.arange(_MAX_GOALS + 1)
         fact = np.array([math.factorial(int(i)) for i in gh], dtype=float)
         ph = np.exp(-lam_h) * lam_h**gh / fact
         pa = np.exp(-lam_a) * lam_a**gh / fact
-        grid = np.outer(ph, pa)
-        if ko:
-            grid = np.tril(grid, k=-1)  # keep only home_goals > away_goals
+        grid = np.outer(ph, pa)  # rows = home goals, cols = away goals
+        if outcome == 2:         # home win
+            grid = np.tril(grid, k=-1)
             if grid.sum() == 0:
                 return 1, 0
+        elif outcome == 0:       # away win
+            grid = np.triu(grid, k=1)
+            if grid.sum() == 0:
+                return 0, 1
+        elif outcome == 1:       # draw
+            diag = np.diag(grid).copy()
+            grid = np.zeros_like(grid)
+            np.fill_diagonal(grid, diag)
         i, j = np.unravel_index(np.argmax(grid), grid.shape)
         return int(i), int(j)
 
@@ -143,7 +151,10 @@ def simulate_group(t: Tournament, group_teams: list[str], rng: np.random.Generat
     h2h_pts: dict[str, dict[str, int]] = defaultdict(lambda: defaultdict(int))
 
     for home, away in _round_robin(group_teams):
-        outcome = rng.choice(3, p=t.match_probs(home, away))  # 0 away,1 draw,2 home
+        # match_probs returns [P(home win), draw, P(away win)]; reorder to the
+        # outcome convention used below and by sample_scoreline (0=away, 1=draw, 2=home).
+        p_h, p_d, p_a = t.match_probs(home, away)
+        outcome = rng.choice(3, p=[p_a, p_d, p_h])  # 0=away win, 1=draw, 2=home win
         hg, ag = t.sample_scoreline(home, away, int(outcome), rng)
         st[home]["GF"] += hg; st[home]["GA"] += ag
         st[away]["GF"] += ag; st[away]["GA"] += hg
@@ -311,17 +322,28 @@ def expected_group_table(t: Tournament, group_teams: list[str]) -> list[dict]:
     return table
 
 
+_OUTCOME_CODE = {"Home Win": 2, "Draw": 1, "Away Win": 0}
+
+
 def group_stage_predictions(t: Tournament) -> pd.DataFrame:
-    """Per-match group-stage probabilities for the report/CSV."""
+    """Per-match group-stage probabilities + most-likely score.
+
+    The score is conditioned on the most-likely outcome (so it never contradicts it):
+    a favored side is shown winning, and a draw (e.g. 1-1) appears where the model
+    actually rates a draw as the single most likely result. Group games CAN be drawn —
+    unlike knockout matches, which force a winner.
+    """
     rows = []
     for g, teams in t.groups.items():
         for home, away in _round_robin(teams):
             p_h, p_d, p_a = t.match_probs(home, away)
             outcomes = {"Home Win": p_h, "Draw": p_d, "Away Win": p_a}
+            ml = max(outcomes, key=outcomes.get)
+            hg, ag = t.modal_scoreline(home, away, outcome=_OUTCOME_CODE[ml])
             rows.append({
                 "group": g, "home": home, "away": away,
                 "p_home": round(p_h, 4), "p_draw": round(p_d, 4), "p_away": round(p_a, 4),
-                "most_likely": max(outcomes, key=outcomes.get),
+                "most_likely": ml, "score": f"{hg}-{ag}",
             })
     return pd.DataFrame(rows)
 
@@ -354,7 +376,7 @@ def representative_bracket(t: Tournament, finish_counts: dict, n: int) -> pd.Dat
             ta, tb = a["team"], b["team"]
             p_a = t.ko_win_prob(ta, tb)
             winner, loser = (a, b) if p_a >= 0.5 else (b, a)
-            wg, lg = t.modal_scoreline(winner["team"], loser["team"], ko=True)
+            wg, lg = t.modal_scoreline(winner["team"], loser["team"], outcome=2)
             # Orient the score to the displayed home-away order.
             home_g, away_g = (wg, lg) if winner is a else (lg, wg)
             rows.append({
