@@ -13,7 +13,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from flags import HOST_FLAGS, flag
+from flags import flag_css, flag_img, host_flags
 from simulator import ROUNDS, expected_group_table
 
 _CSS = """
@@ -35,7 +35,7 @@ a { color: #1d3b8b; }
 .hero h1 { font-size: 32px; margin: 6px 0 18px; }
 .champ { display: inline-flex; align-items: center; gap: 18px; background: rgba(255,255,255,.12);
          border: 1px solid rgba(255,255,255,.25); padding: 14px 26px; border-radius: 16px; backdrop-filter: blur(4px); }
-.champ .cflag { font-size: 56px; line-height: 1; }
+.champ .cflag { display: flex; align-items: center; }
 .champ .clabel { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; opacity: .85; }
 .champ .cname { font-size: 30px; font-weight: 800; }
 .champ .cpct { font-size: 15px; color: #ffe27a; font-weight: 700; }
@@ -45,7 +45,7 @@ a { color: #1d3b8b; }
 .podium { display: flex; justify-content: center; align-items: flex-end; gap: 14px; margin: 6px 0 4px; }
 .step { border-radius: 14px 14px 0 0; padding: 14px 10px 16px; text-align: center; color: #1b1b1f;
         width: 150px; box-shadow: 0 6px 16px rgba(0,0,0,.12); }
-.step .pflag { font-size: 40px; } .step .pname { font-weight: 700; margin-top: 4px; }
+.step .pflag { margin: 2px 0 4px; } .step .pname { font-weight: 700; margin-top: 4px; }
 .step .ppct { font-weight: 800; font-size: 18px; } .step .pmedal { font-size: 22px; }
 .s1 { background: linear-gradient(180deg,#ffe9a3,#f4b400); height: 168px; }
 .s2 { background: linear-gradient(180deg,#eef1f5,#c7ced8); height: 140px; }
@@ -56,7 +56,13 @@ a { color: #1d3b8b; }
 .card { background: #fff; border-radius: 16px; padding: 16px 14px; box-shadow: 0 4px 14px rgba(20,30,50,.08);
         text-align: center; border: 1px solid #e7ebf0; }
 .card .rank { float: left; font-size: 12px; color: #98a2b3; font-weight: 700; }
-.card .cf { font-size: 40px; line-height: 1; } .card .cn { font-weight: 700; margin: 6px 0 2px; }
+.card .cf { margin-bottom: 4px; } .card .cn { font-weight: 700; margin: 6px 0 2px; }
+.flag { display: inline-block; background-size: cover; background-position: center;
+        border-radius: 3px; vertical-align: -3px; box-shadow: 0 0 0 1px rgba(0,0,0,.12); }
+.cflag .flag, .pflag .flag, .cf .flag { box-shadow: 0 2px 6px rgba(0,0,0,.28); border-radius: 4px; vertical-align: middle; }
+.gflags { display: inline-flex; gap: 3px; align-items: center; } .gflags .flag { box-shadow: 0 0 0 1px rgba(0,0,0,.1); }
+.flagchip { display: inline-block; background: #1d3b8b; color: #fff; border-radius: 4px;
+            padding: 1px 5px; font-size: 11px; font-weight: 700; vertical-align: 1px; }
 .card .grp { font-size: 11px; color: #8a94a6; } .card .pw { font-size: 22px; font-weight: 800; margin-top: 6px; }
 .card .sub { font-size: 11px; color: #5b6470; margin-top: 2px; }
 .bar { background: #eceff3; border-radius: 6px; height: 8px; overflow: hidden; margin-top: 8px; }
@@ -116,7 +122,7 @@ def _esc(s) -> str:
 
 
 def _tflag(team: str) -> str:
-    return f"{flag(team)} {_esc(team)}"
+    return f"{flag_img(team)} {_esc(team)}"
 
 
 # --------------------------------------------------------------------------- #
@@ -124,9 +130,9 @@ def _tflag(team: str) -> str:
 # --------------------------------------------------------------------------- #
 def _hero(top, n_sims: int, logloss: float) -> str:
     return f"""<header class="hero">
-  <div class="tag">FIFA World Cup · {HOST_FLAGS} · USA · Mexico · Canada 2026</div>
+  <div class="tag">FIFA World Cup · {host_flags()} · USA · Mexico · Canada 2026</div>
   <h1>Tournament Predictions</h1>
-  <div class="champ"><div class="cflag">{flag(top['team'])}</div>
+  <div class="champ"><span class="cflag">{flag_img(top['team'], 64)}</span>
     <div><div class="clabel">Most likely champion</div>
       <div class="cname">{_esc(top['team'])}</div>
       <div class="cpct">🏆 {_pct(top['P(Win)'])} to win it all</div></div></div>
@@ -142,7 +148,7 @@ def _podium(summary: pd.DataFrame) -> str:
 
     def step(row, cls, medal):
         return (f"<div class='step {cls}'><div class='pmedal'>{medal}</div>"
-                f"<div class='pflag'>{flag(row['team'])}</div>"
+                f"<div class='pflag'>{flag_img(row['team'], 48)}</div>"
                 f"<div class='pname'>{_esc(row['team'])}</div>"
                 f"<div class='ppct'>{_pct(row['P(Win)'])}</div></div>")
 
@@ -159,7 +165,7 @@ def _contenders(summary: pd.DataFrame, k: int = 12) -> str:
         width = r["P(Win)"] / pmax * 100
         cards.append(
             f"<div class='card'><span class='rank'>#{i}</span>"
-            f"<div class='cf'>{flag(r['team'])}</div>"
+            f"<div class='cf'>{flag_img(r['team'], 46)}</div>"
             f"<div class='cn'>{_esc(r['team'])}</div><div class='grp'>Group {_esc(r['group'])}</div>"
             f"<div class='pw'>{_pct(r['P(Win)'])}</div>"
             f"<div class='sub'>Final {_pct(r['P(Final)'])} · SF {_pct(r['P(SF)'])}</div>"
@@ -204,10 +210,10 @@ def _group_section(group: str, teams: list, tournament, group_preds: pd.DataFram
         + "".join(st_rows) + "</table>"
     )
 
-    flags = " ".join(flag(t) for t in teams)
+    flags = " ".join(flag_img(t, 22) for t in teams)
     return (
         f"<details><summary><span class='gbadge'>{group}</span> Group {group}"
-        f"<span style='font-size:20px'>{flags}</span></summary>"
+        f"<span class='gflags'>{flags}</span></summary>"
         f"<p class='note'>Match probabilities — most-likely outcome highlighted; score allows draws:</p>{match_table}"
         f"<p class='note'>Expected final standings (decimal = expected value over the group):</p>{standings}"
         f"</details>"
@@ -274,7 +280,8 @@ def build_html_report(summary: pd.DataFrame, group_preds: pd.DataFrame,
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>WC2026 Prediction Report</title>
-<style>{_CSS}</style></head>
+<style>{_CSS}
+{flag_css()}</style></head>
 <body><div class="wrap">
 {_hero(top, n_sims, logloss)}
 {_podium(summary)}
