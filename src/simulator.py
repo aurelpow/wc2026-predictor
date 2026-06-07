@@ -151,7 +151,10 @@ def simulate_group(t: Tournament, group_teams: list[str], rng: np.random.Generat
     h2h_pts: dict[str, dict[str, int]] = defaultdict(lambda: defaultdict(int))
 
     for home, away in _round_robin(group_teams):
-        outcome = rng.choice(3, p=t.match_probs(home, away))  # 0 away,1 draw,2 home
+        # match_probs returns [P(home win), draw, P(away win)]; reorder to the
+        # outcome convention used below and by sample_scoreline (0=away, 1=draw, 2=home).
+        p_h, p_d, p_a = t.match_probs(home, away)
+        outcome = rng.choice(3, p=[p_a, p_d, p_h])  # 0=away win, 1=draw, 2=home win
         hg, ag = t.sample_scoreline(home, away, int(outcome), rng)
         st[home]["GF"] += hg; st[home]["GA"] += ag
         st[away]["GF"] += ag; st[away]["GA"] += hg
